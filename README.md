@@ -90,7 +90,57 @@ expense-manager/
 ```
 
 ---
+# 🚀 Setup Instructions
 
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/vishalkoc2016/mini-expense-manager.git
+cd mini-expense-manager
+```
+
+### 2. Configure PostgreSQL
+
+Create a PostgreSQL database named:
+
+```
+expense_manager
+```
+
+Update the database credentials in:
+
+```
+backend/src/main/resources/application.yml
+```
+
+### 3. Start the Backend
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Backend runs at:
+
+```
+http://localhost:8080
+```
+
+### 4. Start the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at:
+
+```
+http://localhost:5173
+```
+
+---
 # ✨ Automatic Categorization
 
 Expenses are automatically categorized based on vendor keywords.
@@ -132,6 +182,13 @@ Supported date formats
 A sample CSV (`sample-expenses.csv`) is included in the project.
 
 ---
+# 📋 Assumptions
+
+- The application assumes that vendor names are entered correctly.
+- Each expense belongs to only one category.
+- Categories are assigned based on vendor keywords.
+- The uploaded CSV file should contain the required columns: `date`, `amount`, `vendor`, and `description`.
+- An expense is marked as an anomaly if its amount is more than **3 times** the average amount of its category.
 
 # 📊 Dashboard
 
@@ -271,6 +328,16 @@ The sample dataset contains multiple expense records, including a high-value **A
 - Automatic anomaly recomputation after inserts and CSV imports
 
 ---
+
+# 📝 Design Note
+
+I used a simple rule-based approach for expense categorization. When a user adds an expense or uploads a CSV file, the application checks the vendor name and matches it with saved vendor keywords to assign a category automatically.
+
+For anomaly detection, the application calculates the average expense amount for each category. If an expense is more than **3 times** the average amount of that category, it is marked as an anomaly and highlighted in the application.
+
+The application uses two main tables: one for storing expenses and another for storing vendor-category rules. Keeping them separate makes the application easier to manage and allows new categorization rules to be added without changing the code.
+
+To keep the project simple, I used a rule-based approach instead of machine learning for anomaly detection. This was enough for the assignment requirements and keeps the logic easy to understand.
 
 # 📦 Build
 
