@@ -1,84 +1,147 @@
 # Mini Expense Manager
 
-A small full-stack application to track daily expenses with automatic
-rule-based categorization, CSV import, anomaly detection, and a dashboard
-summary.
+A full-stack Expense Manager application to track daily expenses with automatic categorization, CSV import, anomaly detection, and dashboard analytics.
 
-**Stack:** React + TypeScript · Java Spring Boot · PostgreSQL
+## Tech Stack
+
+- Frontend: React 18 + TypeScript + Vite + Axios
+- Backend: Java 17 + Spring Boot 3 + Spring Data JPA
+- Database: PostgreSQL
+- Build Tool: Maven
 
 ---
 
 ## Features
 
-- **Add expenses manually** — date, amount, vendor, description
-- **Automatic categorization** — vendor keywords map to categories
-  (Swiggy → Food, Uber → Transport, Amazon → Shopping, …).
-  Rules are seeded on first run and can be extended via `/api/rules`.
-- **CSV upload** — bulk import with per-row error reporting.
-  Columns: `date, amount, vendor, description`.
-- **Anomaly detection** — any expense **more than 3× the average of its
-  category** is flagged. Flags are recomputed after every insert/import so
-  the dataset stays consistent.
-- **Dashboard** — monthly totals per category, top 5 vendors by spend,
-  and total anomaly count.
+### Add Expense
+- Add expenses manually
+- Fields:
+  - Date
+  - Amount
+  - Vendor
+  - Description
+
+### Automatic Categorization
+Expenses are categorized automatically based on vendor keywords.
+
+Examples:
+
+| Vendor | Category |
+|---------|----------|
+| Swiggy | Food |
+| Zomato | Food |
+| Uber | Transport |
+| Ola | Transport |
+| Amazon | Shopping |
+| Apple Store | Shopping |
+| Myntra | Shopping |
+| Netflix | Entertainment |
+| Airtel | Utilities |
+| Apollo Pharmacy | Health |
+
+Vendor-category rules are stored in the database and can be managed through REST APIs.
 
 ---
 
-## Project Layout
+### CSV Upload
 
+Upload expenses in bulk.
+
+Supported columns
+
+```text
+date,amount,vendor,description
 ```
+
+Supported date formats
+
+- yyyy-MM-dd
+- dd/MM/yyyy
+- MM/dd/yyyy
+- dd-MM-yyyy
+
+---
+
+### Dashboard
+
+Displays
+
+- Monthly expense totals by category
+- Top 5 vendors
+- Total anomaly count
+
+---
+
+### Anomaly Detection
+
+Expenses greater than **3× the average amount of their category** are automatically flagged.
+
+Flagged expenses
+
+- appear with a red **ANOMALY** badge
+- are included in dashboard anomaly count
+
+---
+
+## Project Structure
+
+```text
 expense-manager/
-├── backend/              Spring Boot 3 · Java 17 · JPA · OpenCSV
-├── frontend/             React 18 · TypeScript · Vite · Axios
-├── docker-compose.yml    PostgreSQL 16 for local dev
-├── sample-expenses.csv   Example CSV (includes one anomaly row)
+│
+├── backend/
+│   ├── controller/
+│   ├── dto/
+│   ├── model/
+│   ├── repository/
+│   ├── service/
+│   └── resources/
+│
+├── frontend/
+│   ├── src/
+│   ├── components/
+│   ├── services/
+│   └── App.tsx
+│
+├── docker-compose.yml
+├── sample-expenses.csv
 └── README.md
 ```
 
 ---
 
-## Prerequisites
+# Prerequisites
 
-- **Java 17+**
-- **Maven 3.9+**
-- **Node 18+** and npm
-- **Docker** (optional — for the bundled PostgreSQL) or a running local
-  PostgreSQL 14+
+- Java 17+
+- Maven 3.9+
+- Node.js 18+
+- npm
+- PostgreSQL 14+
 
 ---
 
-## Quick Start
+# Backend Setup
 
-### 1. Start PostgreSQL
-
-Using Docker:
-
-```bash
-docker compose up -d
-```
-
-This starts PostgreSQL 16 on `localhost:5432` with database
-`expense_manager` and credentials `postgres / postgres`.
-
-Or point the backend at your own database by editing
-`backend/src/main/resources/application.yml`.
-
-### 2. Run the backend
+Go to backend
 
 ```bash
 cd backend
+```
+
+Run
+
+```bash
 mvn spring-boot:run
 ```
 
-The API starts on **http://localhost:8080**.
+Backend starts at
 
-Prefer to run without PostgreSQL? Use the bundled in-memory H2 profile:
-
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=h2
+```
+http://localhost:8080
 ```
 
-### 3. Run the frontend
+---
+
+# Frontend Setup
 
 ```bash
 cd frontend
@@ -86,76 +149,98 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173**. Vite proxies `/api` calls to the backend.
+Frontend
 
-### 4. Try it
-
-- Add an expense manually (the category is auto-assigned).
-- Or click **Upload CSV** and pick `sample-expenses.csv` — the Amazon
-  ₹15,999 row will be flagged as an anomaly.
-
----
-
-## API Reference
-
-| Method | Path                          | Purpose                              |
-|--------|-------------------------------|--------------------------------------|
-| GET    | `/api/expenses`               | List all expenses (newest first)     |
-| POST   | `/api/expenses`               | Create an expense                    |
-| DELETE | `/api/expenses/{id}`          | Delete an expense                    |
-| POST   | `/api/expenses/upload`        | Upload CSV (`multipart/form-data`)   |
-| GET    | `/api/expenses/dashboard`     | Aggregated dashboard summary         |
-| GET    | `/api/rules`                  | List vendor → category rules         |
-| POST   | `/api/rules`                  | Add a rule                           |
-| DELETE | `/api/rules/{id}`             | Remove a rule                        |
-
-**Create expense payload:**
-
-```json
-{
-  "date": "2026-07-07",
-  "amount": 450.00,
-  "vendor": "Swiggy",
-  "description": "Team lunch"
-}
+```
+http://localhost:5173
 ```
 
 ---
 
-## Design Notes
+# Database Configuration
 
-- **Categorization rules** live in a `vendor_category_rules` table and
-  are matched via case-insensitive `contains` on the vendor string.
-  This keeps the mapping data-driven and editable at runtime without
-  code changes.
-- **Anomaly recomputation** — the naive "flag on insert" approach breaks
-  down for the very first entries in a category (average = the row
-  itself). After each write we recompute the category's average and
-  re-flag *all* rows in that category, keeping the dataset consistent.
-- **CSV parsing** uses OpenCSV with a header-index map so column order
-  doesn't matter, and multiple date formats (`yyyy-MM-dd`,
-  `dd/MM/yyyy`, `MM/dd/yyyy`, `dd-MM-yyyy`) are accepted.
-- **Validation** — `ExpenseRequest` uses Bean Validation; a global
-  exception handler returns structured 400 responses.
-- **CORS** is enabled for the Vite dev server; Vite also proxies `/api`
-  during development so the browser never crosses origins.
+Default configuration
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/expense_manager
+    username: postgres
+    password: postgres
+```
 
 ---
 
-## Building for Production
+# Sample CSV
+
+Upload
+
+```
+sample-expenses.csv
+```
+
+The sample file contains multiple expenses including a high-value **Apple Store** transaction that is automatically detected as an anomaly.
+
+---
+
+# REST APIs
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | /api/expenses | Get all expenses |
+| POST | /api/expenses | Add expense |
+| DELETE | /api/expenses/{id} | Delete expense |
+| POST | /api/expenses/upload | Upload CSV |
+| GET | /api/expenses/dashboard | Dashboard summary |
+| GET | /api/rules | Vendor rules |
+| POST | /api/rules | Add vendor rule |
+| DELETE | /api/rules/{id} | Delete vendor rule |
+
+---
+
+# Design Highlights
+
+- Rule-based automatic expense categorization
+- Dashboard analytics
+- CSV bulk upload
+- Bean Validation
+- OpenCSV parsing
+- PostgreSQL persistence
+- RESTful APIs
+- Layered architecture (Controller → Service → Repository)
+- Spring Data JPA
+- Automatic anomaly recomputation after inserts/imports
+
+---
+
+# Build
+
+Frontend
 
 ```bash
-# Frontend bundle
 cd frontend
-npm run build           # outputs to frontend/dist
+npm run build
+```
 
-# Backend jar
-cd ../backend
-mvn clean package       # outputs backend/target/expense-manager-0.0.1-SNAPSHOT.jar
+Backend
+
+```bash
+cd backend
+mvn clean package
+```
+
+Run Jar
+
+```bash
 java -jar target/expense-manager-0.0.1-SNAPSHOT.jar
 ```
 
-You can either serve `frontend/dist` from any static host (nginx,
-CloudFront, etc.) pointing at the Spring Boot API, or copy the built
-assets into `backend/src/main/resources/static/` before packaging to
-ship a single fat jar.
+---
+
+## Future Improvements
+
+- User authentication
+- Monthly charts
+- Edit expense
+- Advanced anomaly detection using historical data
+- Export reports to PDF/Excel
