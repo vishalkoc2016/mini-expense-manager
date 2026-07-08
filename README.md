@@ -337,8 +337,6 @@ For anomaly detection, the application calculates the average expense amount for
 
 The application uses two main tables: one for storing expenses and another for storing vendor-category rules. Keeping them separate makes the application easier to manage and allows new categorization rules to be added without changing the code.
 
-To keep the project simple, I used a rule-based approach instead of machine learning for anomaly detection. This was enough for the assignment requirements and keeps the logic easy to understand.
-
 # 📦 Build
 
 ### Frontend
